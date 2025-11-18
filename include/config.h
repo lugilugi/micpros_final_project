@@ -25,9 +25,9 @@
 #define COLS 4
 
 // Row pins (analog pins for better availability)
-const uint8_t rowPins[ROWS] = {32, 33, 34, 35};
+byte rowPins[ROWS] = {32, 33, 34, 35};
 // Column pins
-const uint8_t colPins[COLS] = {36, 37, 38, 39};
+byte colPins[COLS] = {36, 37, 38, 39};
 
 // ===================== SPI/NFC CONFIGURATION ==========================
 // Note: NFC removed from revised specs, but keeping config for future use
