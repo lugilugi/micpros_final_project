@@ -4,11 +4,11 @@
 #include <Arduino.h>
 
 // ===================== WIFI CREDENTIALS ================================
-#define WIFI_SSID "YOUR_SSID"
-#define WIFI_PASS "YOUR_PASSWORD"
+#define WIFI_SSID "SEMShelter"
+#define WIFI_PASS "SEM2010!"
 
 // ===================== GOOGLE SHEETS API ===============================
-#define APPS_SCRIPT_URL "YOUR_APPS_SCRIPT_URL"
+#define APPS_SCRIPT_URL "https://script.google.com/macros/s/AKfycbz0ZfBuJ25KbkwfKOymWLuGpaHEPXwZzLGQaCfiJ1z5otdSJXWjeuWJxd5J-90BLL2_/exec"
 
 // ===================== I2C CONFIGURATION ==============================
 #define I2C_MIN_ADDR 0x08
@@ -24,15 +24,13 @@
 #define ROWS 4
 #define COLS 4
 
-// Row pins (analog pins for better availability)
-byte rowPins[ROWS] = {32, 33, 34, 35};
-// Column pins
-byte colPins[COLS] = {36, 37, 38, 39};
+// ===================== I2C PINS =======================================
+#define I2C_SDA 21
+#define I2C_SCL 22
 
-// ===================== SPI/NFC CONFIGURATION ==========================
-// Note: NFC removed from revised specs, but keeping config for future use
-#define SS_PIN 5
-#define RST_PIN 22
+// Row/column pin arrays (defined in one .cpp file to avoid multiple definitions)
+extern byte rowPins[ROWS];
+extern byte colPins[COLS];
 
 // ===================== TIMING CONSTANTS ==============================
 #define PAYMENT_TIMEOUT_MS 30000    // Confirmation wait timeout

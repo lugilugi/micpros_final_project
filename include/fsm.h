@@ -7,15 +7,15 @@
 // ===================== FSM STATES ======================================
 
 enum State {
-  IDLE = 0,              // Default state, waiting for input
-  ITEM_SELECT = 1,       // User entering product code
-  CHECK_AVAIL = 2,       // Checking stock availability
-  WAIT_CONFIRM = 3,      // Waiting for user confirmation (* = cancel, # = confirm)
-  DISPENSE = 4,          // Dispensing product
-  THANK_YOU = 5,         // Transaction complete
-  OUT_OF_STOCK = 6,      // Product unavailable
-  CANCEL_STATE = 7,      // Transaction cancelled
-  ERROR_STATE = 8        // Error state
+  STATE_IDLE = 0,              // Default state, waiting for input
+  STATE_ITEM_SELECT = 1,       // User entering product code
+  STATE_CHECK_AVAIL = 2,       // Checking stock availability
+  STATE_WAIT_CONFIRM = 3,      // Waiting for user confirmation (* = cancel, # = confirm)
+  STATE_DISPENSE = 4,          // Dispensing product
+  STATE_THANK_YOU = 5,         // Transaction complete
+  STATE_OUT_OF_STOCK = 6,      // Product unavailable
+  STATE_CANCEL = 7,            // Transaction cancelled
+  STATE_ERROR = 8              // Error state
 };
 
 // ===================== FSM EVENTS ======================================

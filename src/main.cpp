@@ -21,6 +21,11 @@ char keysMap[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
+
+// Pin definitions for keypad (define here to satisfy externs in config.h)
+byte rowPins[ROWS] = {14, 27, 26, 25};
+byte colPins[COLS] = {33, 32, 18, 19};
+
 Keypad keypad = Keypad(makeKeymap(keysMap), rowPins, colPins, ROWS, COLS);
 
 // ===================== EVENT DETECTION ===================================
@@ -35,7 +40,7 @@ Event detectEvent() {
   }
 
   // Priority 2: Periodic sync check (in IDLE only)
-  if (currentState == IDLE) {
+  if (currentState == STATE_IDLE) {
     unsigned long now = millis();
     if (now - syncTimer > SYNC_INTERVAL_MS) {
       return EVT_SYNC_TIMEOUT;
@@ -51,7 +56,7 @@ void processEventLoop() {
   Event evt = detectEvent();
   
   // Handle keypad character input with immediate LCD update
-  if (evt == EVT_KEY_CHAR && currentState == ITEM_SELECT) {
+  if (evt == EVT_KEY_CHAR && currentState == STATE_ITEM_SELECT) {
     char key = keypad.getKey();
     if (key && inputBuffer.length() < 20) {
       inputBuffer += key;
@@ -87,7 +92,7 @@ void setup() {
   Serial.println("[1/5] I2C initialized");
   
   // Initialize LCD display
-  lcd.init();
+  lcd.init(I2C_SDA, I2C_SCL);
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -120,7 +125,7 @@ void setup() {
   
   // Initialize FSM
   initFSM();
-  enterState(IDLE);
+  enterState(STATE_IDLE);
   
   Serial.println("\n=== INITIALIZATION COMPLETE ===\n");
 }

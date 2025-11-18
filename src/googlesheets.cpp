@@ -1,6 +1,8 @@
 #include "googlesheets.h"
 #include "config.h"
 #include "datatypes.h"
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
 // ===================== WIFI CONNECTIVITY ============================
