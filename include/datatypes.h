@@ -16,7 +16,7 @@ enum ErrorCode {
   ERR_SHEETS_SYNC = 6,          // Google Sheets sync failed
   ERR_MODULE_DISCONNECTED = 7,  // Module was connected, now offline
   ERR_INVALID_PRODUCT = 8,      // Product code invalid
-  ERR_TIMEOUT = 9               // Critical operation timeout
+  ERR_APP_TIMEOUT = 9           // Critical operation timeout
 };
 
 // ===================== PRODUCT DATA STRUCTURES =======================

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C_ESP32.h>
+#include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
 #include <WiFi.h>
 #include "config.h"
@@ -27,6 +27,8 @@ byte rowPins[ROWS] = {14, 27, 26, 25};
 byte colPins[COLS] = {33, 32, 18, 19};
 
 Keypad keypad = Keypad(makeKeymap(keysMap), rowPins, colPins, ROWS, COLS);
+// Last read keypad character (stored so we don't call getKey() twice)
+char lastKey = 0;
 
 // ===================== EVENT DETECTION ===================================
 
@@ -34,8 +36,10 @@ Event detectEvent() {
   // Priority 1: Keypad input (all states)
   char key = keypad.getKey();
   if (key) {
+    lastKey = key; // stash the key for later use
     if (key == '*') return EVT_KEY_CANCEL;
     if (key == '#') return EVT_KEY_SUBMIT;
+    Serial.println(key);
     return EVT_KEY_CHAR;
   }
 
@@ -54,25 +58,38 @@ Event detectEvent() {
 
 void processEventLoop() {
   Event evt = detectEvent();
-  
-  // Handle keypad character input with immediate LCD update
-  if (evt == EVT_KEY_CHAR && currentState == STATE_ITEM_SELECT) {
-    char key = keypad.getKey();
-    if (key && inputBuffer.length() < 20) {
-      inputBuffer += key;
-      lcd.setCursor(0, 1);
-      lcd.print(inputBuffer);
-      // Pad with spaces to clear old text
-      for (int i = inputBuffer.length(); i < 20; i++) {
-        lcd.print(" ");
-      }
-    }
-    return; // Don't trigger state change on char
+  if (evt != EVT_NONE) {
+    Serial.print("[EVENT] detected evt=");
+    Serial.print((int)evt);
+    Serial.print(" currentState=");
+    Serial.println((int)currentState);
   }
   
-  // Process all other events through FSM
+  // Process events through FSM. For character events we call the FSM
+  // first (it may transition into ITEM_SELECT) then consume the
+  // stashed `lastKey` if we're in `STATE_ITEM_SELECT` to display it.
   if (evt != EVT_NONE) {
-    processEvent(evt);
+    if (evt == EVT_KEY_CHAR) {
+      processEvent(evt);
+      // If we're now in ITEM_SELECT, consume and display the character
+      if (currentState == STATE_ITEM_SELECT && lastKey) {
+        char key = lastKey;
+        lastKey = 0; // consume
+        if (key && inputBuffer.length() < 20) {
+          inputBuffer += key;
+          lcd.setCursor(0, 1);
+          lcd.print(inputBuffer);
+          // Pad with spaces to clear old text
+          for (int i = inputBuffer.length(); i < 20; i++) {
+            lcd.print(" ");
+          }
+        }
+      }
+    } else {
+      // non-character events should clear any stashed key
+      lastKey = 0;
+      processEvent(evt);
+    }
   }
   
   // Execute current state actions (timeouts, periodic tasks, etc.)
@@ -135,7 +152,4 @@ void setup() {
 void loop() {
   // Process events and state machine
   processEventLoop();
-  
-  // Small delay to prevent overwhelming the CPU
-  delay(50);
 }

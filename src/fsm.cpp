@@ -2,7 +2,7 @@
 #include "googlesheets.h"
 #include "productmoduleinterface.h"
 #include "config.h"
-#include <LiquidCrystal_I2C_ESP32.h>
+#include <LiquidCrystal_I2C.h>
 
 // ===================== FSM STATE VARIABLES ============================
 
@@ -23,7 +23,7 @@ extern LiquidCrystal_I2C lcd;
 
 static State transitionTable[9][13] = {
   // IDLE (state 0)
-  {STATE_IDLE, STATE_ITEM_SELECT, STATE_IDLE, STATE_CANCEL, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_ERROR},
+  {STATE_IDLE, STATE_ITEM_SELECT, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_IDLE, STATE_ERROR},
   
   // ITEM_SELECT (state 1)
   {STATE_ITEM_SELECT, STATE_ITEM_SELECT, STATE_CHECK_AVAIL, STATE_CANCEL, STATE_ITEM_SELECT, STATE_CHECK_AVAIL, STATE_CHECK_AVAIL, STATE_ITEM_SELECT, STATE_ITEM_SELECT, STATE_ITEM_SELECT, STATE_ITEM_SELECT, STATE_ITEM_SELECT, STATE_ERROR},
@@ -47,7 +47,7 @@ static State transitionTable[9][13] = {
   {STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_CANCEL, STATE_IDLE, STATE_CANCEL, STATE_ERROR},
   
   // ERROR_STATE (state 8)
-  {STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_IDLE, STATE_ERROR, STATE_ERROR}
+  {STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_ERROR, STATE_IDLE, STATE_IDLE, STATE_ERROR}
 };
 
 // ===================== FSM INITIALIZATION =============================
@@ -68,6 +68,8 @@ void initFSM() {
 
 void onStateEntry(State s) {
   stateEnteredAt = millis();
+  Serial.print("[FSM] onStateEntry ");
+  Serial.println((int)s);
   
   switch (s) {
     case STATE_IDLE:
@@ -75,26 +77,26 @@ void onStateEntry(State s) {
       selectedCode = "";
       selectedModule = nullptr;
       lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("VENDING SYSTEM");
       lcd.setCursor(0, 1);
+      lcd.print("VENDISELL");
+      lcd.setCursor(0, 2);
       lcd.print("Enter Product Code");
       break;
       
     case STATE_ITEM_SELECT:
       inputBuffer = "";
       lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Product Code:");
       lcd.setCursor(0, 1);
+      lcd.print("Product Code:");
+      lcd.setCursor(0, 2);
       lcd.print("");
       break;
       
     case STATE_CHECK_AVAIL:
       lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Checking stock...");
       lcd.setCursor(0, 1);
+      lcd.print("Checking stock...");
+      lcd.setCursor(0, 2);
       lcd.print(selectedCode.c_str());
       break;
       
@@ -154,6 +156,8 @@ void onStateEntry(State s) {
 }
 
 void onStateExit(State s) {
+  Serial.print("[FSM] onStateExit ");
+  Serial.println((int)s);
   switch (s) {
     case STATE_WAIT_CONFIRM:
       confirmDeadline = 0;
@@ -215,9 +219,10 @@ void onStateAction(State s) {
       break;
       
     case STATE_CANCEL:
-      // Auto-return to IDLE after 3 seconds
+      // Auto-return to IDLE after CANCEL_TIMEOUT_MS
       if (now - stateEnteredAt > CANCEL_TIMEOUT_MS) {
-        processEvent(EVT_TIMEOUT);
+        Serial.println("[FSM] CANCEL timeout -> returning to IDLE");
+        enterState(STATE_IDLE);
       }
       break;
       
@@ -246,34 +251,55 @@ void enterState(State newState) {
 void processEvent(Event evt) {
   if (evt == EVT_NONE) return;
   
+  Serial.print("[FSM] processEvent evt=");
+  Serial.print((int)evt);
+  Serial.print(" currentState=");
+  Serial.println((int)currentState);
+
   State nextState = transitionTable[currentState][evt];
   bool shouldTransition = true;
-  
-  switch (currentState) {
-    case STATE_IDLE:
-      break;
-      
-    case STATE_ITEM_SELECT:
-      shouldTransition = handleItemSelectEvent(evt);
-      break;
-      
-    case STATE_CHECK_AVAIL:
-      shouldTransition = handleCheckAvailEvent(evt);
-      break;
-      
-    case STATE_WAIT_CONFIRM:
-      shouldTransition = handleConfirmEvent(evt);
-      break;
-      
-    case STATE_DISPENSE:
-      shouldTransition = handleDispenseEvent(evt);
-      break;
-      
-    default:
-      break;
+
+  // If an error occurred, always allow the transition table to decide
+  // the next state (usually STATE_ERROR). Otherwise, consult the
+  // state-specific handler which may veto the transition.
+  if (evt != EVT_ERROR_OCCURRED) {
+    switch (currentState) {
+      case STATE_IDLE:
+        break;
+
+      case STATE_ITEM_SELECT:
+        shouldTransition = handleItemSelectEvent(evt);
+        break;
+
+      case STATE_CHECK_AVAIL:
+        shouldTransition = handleCheckAvailEvent(evt);
+        break;
+
+      case STATE_WAIT_CONFIRM:
+        shouldTransition = handleConfirmEvent(evt);
+        break;
+
+      case STATE_DISPENSE:
+        shouldTransition = handleDispenseEvent(evt);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  if (!shouldTransition) {
+    Serial.print("[FSM] handler vetoed transition for evt=");
+    Serial.print((int)evt);
+    Serial.print(" currentState=");
+    Serial.println((int)currentState);
   }
   
   if (shouldTransition && nextState != currentState) {
+    Serial.print("[FSM] transitioning ");
+    Serial.print((int)currentState);
+    Serial.print(" -> ");
+    Serial.println((int)nextState);
     enterState(nextState);
   }
 }

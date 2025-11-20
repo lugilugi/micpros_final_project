@@ -97,7 +97,7 @@ bool i2c_dispense(uint8_t addr) {
     delay(50);
   }
   
-  g_registry.logError(ERR_TIMEOUT, "Dispense ACK timeout", String(addr));
+  g_registry.logError(ERR_APP_TIMEOUT, "Dispense ACK timeout", String(addr));
   return false;
 }
 
