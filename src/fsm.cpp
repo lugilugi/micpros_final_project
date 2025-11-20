@@ -86,9 +86,11 @@ void onStateEntry(State s) {
     case STATE_ITEM_SELECT:
       inputBuffer = "";
       lcd.clear();
-      lcd.setCursor(0, 1);
+      lcd.setCursor(0, 0);
       lcd.print("Product Code:");
-      lcd.setCursor(0, 2);
+      lcd.setCursor(0,3);
+      lcd.print("[*]Cancel [#]Submit");
+      lcd.setCursor(0, 1);
       lcd.print("");
       break;
       

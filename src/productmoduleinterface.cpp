@@ -109,6 +109,8 @@ void discoverProductModules() {
   Serial.println("Scanning I2C bus for product modules...");
   
   for (uint8_t addr = I2C_MIN_ADDR; addr <= I2C_MAX_ADDR; ++addr) {
+    if (addr == 0x27) continue; // Skip LCD address
+
     Wire.beginTransmission(addr);
     uint8_t err = Wire.endTransmission();
     

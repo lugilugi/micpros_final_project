@@ -44,7 +44,7 @@ extern byte colPins[COLS];
 #define CMD_WHOAMI          0x01  // Get module identity
 #define CMD_GET_STOCK       0x02  // Query stock level
 #define CMD_UPDATE_DISPLAY  0x03  // Update OLED display
-#define CMD_DISPENSE        0x10  // Dispense item
+#define CMD_DISPENSE        0x10  // Dispense itemb
 #define CMD_ACK_SUCCESS     0x55  // Success acknowledgment
 #define CMD_ACK_ERROR       0xEE  // Error acknowledgment
 
