@@ -2,7 +2,7 @@
 #include "googlesheets.h"
 #include "productmoduleinterface.h"
 #include "config.h"
-#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C_ESP32.h>
 
 // ===================== FSM STATE VARIABLES ============================
 
