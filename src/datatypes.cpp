@@ -129,3 +129,43 @@ void ProductRegistry::clearRegistry() {
 bool ProductRegistry::validateProductExists(const String& code) {
   return findProduct(code) != nullptr;
 }
+
+// ===================== DEBUG PRINT HELPERS ===========================
+
+void ProductRegistry::debugPrintProducts() {
+  Serial.println("--- Product Registry: Products ---");
+  if (products.empty()) {
+    Serial.println("(no products)");
+    return;
+  }
+  for (size_t i = 0; i < products.size(); ++i) {
+    auto &p = products[i];
+    Serial.print("["); Serial.print(i); Serial.print("] ");
+    Serial.print("code="); Serial.print(p.itemCode);
+    Serial.print(" name="); Serial.print(p.name);
+    Serial.print(" stock="); Serial.print(p.stock);
+    Serial.print(" target="); Serial.print(p.targetAmount);
+    Serial.print(" available="); Serial.println(p.available ? "true" : "false");
+  }
+}
+
+void ProductRegistry::debugPrintModules() {
+  Serial.println("--- Product Registry: Modules ---");
+  if (modules.empty()) {
+    Serial.println("(no modules)");
+    return;
+  }
+  for (size_t i = 0; i < modules.size(); ++i) {
+    auto &m = modules[i];
+    Serial.print("["); Serial.print(i); Serial.print("] ");
+    Serial.print("addr=0x"); Serial.print(m.i2cAddress, HEX);
+    Serial.print(" (dec="); Serial.print((int)m.i2cAddress); Serial.print(")");
+    Serial.print(" uid="); Serial.print(m.moduleUID);
+    Serial.print(" code="); Serial.print(m.itemCode);
+    Serial.print(" name="); Serial.print(m.name);
+    Serial.print(" stock="); Serial.print(m.stock);
+    Serial.print(" healthy="); Serial.print(m.healthy ? "true" : "false");
+    Serial.print(" online="); Serial.print(m.online ? "true" : "false");
+    Serial.print(" lastSeen="); Serial.println(m.lastSeen);
+  }
+}

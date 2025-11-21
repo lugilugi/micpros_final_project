@@ -86,6 +86,10 @@ public:
   // Sync operations
   void clearRegistry();
   bool validateProductExists(const String& code);
+
+  // Debug helpers: print contents to Serial
+  void debugPrintProducts();
+  void debugPrintModules();
 };
 
 // ===================== GLOBAL REGISTRY ===============================

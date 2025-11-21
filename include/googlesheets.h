@@ -21,6 +21,10 @@ void logErrorToSheets(const String& errorMsg, const String& errorDetails);
 // Register new product module to Google Sheets
 void registerNewModuleToSheets(const String& moduleUID, uint8_t i2cAddress);
 
+// Check if a module UID is already registered in the Modules sheet.
+// If found, `outAddress` is set to the stored address (0 if missing) and
+// the function returns true. Returns false if not found or on error.
+bool isModuleRegistered(const String& moduleUID, uint8_t &outAddress);
 // ===================== WIFI CONNECTIVITY ============================
 
 // Ensure WiFi connection is active

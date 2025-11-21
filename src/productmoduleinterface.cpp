@@ -105,9 +105,9 @@ bool i2c_dispense(uint8_t addr) {
 
 void discoverProductModules() {
   g_registry.clearRegistry();
-  
+
   Serial.println("Scanning I2C bus for product modules...");
-  
+
   for (uint8_t addr = I2C_MIN_ADDR; addr <= I2C_MAX_ADDR; ++addr) {
     if (addr == 0x27) continue; // Skip LCD address
 
@@ -126,29 +126,51 @@ void discoverProductModules() {
         int stock = 0;
         i2c_getStock(addr, stock);
         
-        // Add module with placeholder data
-        // Will be matched with Google Sheets data later
-        g_registry.addModule(addr, moduleUID, "NEW_MODULE", "New Module", stock);
+        // Check Google Sheets to see if this module UID is already registered
+        uint8_t sheetAddr = 0;
+        bool registered = isModuleRegistered(moduleUID, sheetAddr);
+
+        if (!registered) {
+          // Not present in Sheets: add and register
+          g_registry.addModule(addr, moduleUID, "NEW_MODULE", "New Module", stock);
+          registerNewModuleToSheets(moduleUID, addr);
+        } else {
+          // Already registered in Sheets: add to registry. Product matching
+          // to sheet data happens elsewhere (sync/match routines).
+          g_registry.addModule(addr, moduleUID, "REGISTERED", "Registered Module", stock);
+        }
+
         g_registry.updateModuleHealth(addr, true);
       } else {
         g_registry.updateModuleHealth(addr, false);
       }
     }
   }
+
+  // After scanning and populating the module list, pull the latest product
+  // data from Google Sheets and let the sync routine match products to
+  // discovered modules by I2C address.
+  syncProductDataFromSheets();
+  // Do a best-effort local match (if product codes were set)
+  matchModulesToSheets();
+  // For debugging, print discovered modules
+  g_registry.debugPrintModules();
   
   Serial.println("Module discovery complete");
 }
 
 void matchModulesToSheets() {
-  // Match discovered modules with Google Sheets data based on:
-  // 1. Module UID match (primary)
-  // 2. I2C address match (fallback)
-  
+  // After `syncProductDataFromSheets()` has run, modules whose I2C address
+  // matched a row in the Products sheet will already have `itemCode`/`name`
+  // populated. This helper performs a best-effort local reconcile: if a
+  // module already has an `itemCode`, ensure the module's name/stock mirror
+  // the registered product data in the local registry.
   for (auto& module : g_registry.getModules()) {
-    ProductItem* product = g_registry.findProduct(module.moduleUID);
+    if (module.itemCode.length() == 0) continue;
+    ProductItem* product = g_registry.findProduct(module.itemCode);
     if (product) {
-      module.itemCode = product->itemCode;
       module.name = product->name;
+      module.stock = product->stock;
     }
   }
 }
