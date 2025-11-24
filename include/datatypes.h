@@ -7,16 +7,16 @@
 // ===================== ERROR CODES =======================================
 
 enum ErrorCode {
-  ERR_NONE = 0,
-  ERR_MODULE_OFFLINE = 1,      // Product module not responding
-  ERR_I2C_COMM = 2,             // I2C communication failure
-  ERR_DISPENSE_FAILED = 3,      // Motor/dispense mechanism error
-  ERR_MODULE_UID_MISMATCH = 4,  // Module UID doesn't match sheet
-  ERR_STOCK_MISMATCH = 5,       // Stock count mismatch
-  ERR_SHEETS_SYNC = 6,          // Google Sheets sync failed
-  ERR_MODULE_DISCONNECTED = 7,  // Module was connected, now offline
-  ERR_INVALID_PRODUCT = 8,      // Product code invalid
-  ERR_APP_TIMEOUT = 9           // Critical operation timeout
+  ERR_NONE =                0,
+  ERR_MODULE_OFFLINE =      1,       // Product module not responding
+  ERR_I2C_COMM =            2,       // I2C communication failure
+  ERR_DISPENSE_FAILED =     3,       // Motor/dispense mechanism error
+  ERR_MODULE_UID_MISMATCH = 4,       // Module UID doesn't match sheet
+  ERR_STOCK_MISMATCH =      5,       // Stock count mismatch
+  ERR_SHEETS_SYNC =         6,       // Google Sheets sync failed
+  ERR_MODULE_DISCONNECTED = 7,       // Module was connected, now offline
+  ERR_INVALID_PRODUCT =     8,       // Product code invalid
+  ERR_APP_TIMEOUT =         9        // Critical operation timeout
 };
 
 // ===================== PRODUCT DATA STRUCTURES =======================

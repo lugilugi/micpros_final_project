@@ -76,6 +76,32 @@ static void parseValuesJson(const String &json, std::vector<std::vector<String>>
   }
 }
 
+// Helper: return current time as an ISO-like string using NTP/localtime
+static String getNtpTimeString()
+{
+  struct tm timeinfo;
+  // try getLocalTime which uses the configured NTP
+  if (getLocalTime(&timeinfo)) {
+    char buf[64];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &timeinfo);
+    return String(buf);
+  }
+
+  // fallback to time() epoch seconds if available
+  time_t now = time(nullptr);
+  if (now > 1000000000) {
+    struct tm *tmr = localtime(&now);
+    if (tmr) {
+      char buf[64];
+      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tmr);
+      return String(buf);
+    }
+  }
+
+  // final fallback: use millis() to avoid empty values
+  return String(millis());
+}
+
 void tokenStatusCallback(TokenInfo info);
 
 // ===================== WIFI CONNECTIVITY ============================
@@ -155,7 +181,7 @@ void syncProductDataFromSheets() {
     String code = r[0];
     String name = r[1];
     int stock = r[2].toInt();
-    uint8_t addr = (uint8_t)r[3].toInt();
+    uint8_t addr = (uint8_t)r[3];
 
     g_registry.addProduct(code, name, stock, true);
     ProductModule* mod = g_registry.findModuleByAddress(addr);
@@ -168,6 +194,31 @@ void syncProductDataFromSheets() {
 
   Serial.println("Product data synced from Google Sheets (service-account)");
   g_registry.debugPrintProducts();
+
+  // --- Also load Modules mapping into registry (Modules!A2:C -> UID, Address, ProductCode)
+  String respMod;
+  bool ok2 = GSheet.values.get(&respMod, spreadsheetId, "Modules!A2:C");
+  if (!ok2) {
+    Serial.println("GSheet: failed to read Modules range: ");
+    Serial.println(GSheet.errorReason());
+    // don't treat this as fatal; registry still has products
+  } else {
+    std::vector<std::vector<String>> modRows;
+    parseValuesJson(respMod, modRows);
+    for (size_t i = 0; i < modRows.size(); ++i) {
+      auto &r = modRows[i];
+      if (r.size() < 1) continue;
+      String uid = r[0];
+      uint8_t addr = 0;
+      String code = "";
+      if (r.size() >= 2) addr = (uint8_t)r[1].toInt();
+      if (r.size() >= 3) code = r[2];
+      // Add module entry; name/stock will be filled when product exists
+      g_registry.addModule(addr, uid, code, "", 0);
+    }
+    Serial.println("Module mapping synced from Google Sheets");
+    g_registry.debugPrintModules();
+  }
 }
 
 void logTransactionToSheets(const String& itemCode, int amount) {
@@ -181,7 +232,7 @@ void logTransactionToSheets(const String& itemCode, int amount) {
   FirebaseJson valueRange;
   valueRange.add("range", "Transactions!A:C");
   valueRange.add("majorDimension", "ROWS");
-  valueRange.set("values/[0]/[0]", String(millis()));
+  valueRange.set("values/[0]/[0]", getNtpTimeString());
   valueRange.set("values/[0]/[1]", itemCode);
   valueRange.set("values/[0]/[2]", String(amount));
 
@@ -255,7 +306,7 @@ void logErrorToSheets(const String& errorMsg, const String& errorDetails) {
   FirebaseJson valueRange;
   valueRange.add("range", "Errors!A:C");
   valueRange.add("majorDimension", "ROWS");
-  valueRange.set("values/[0]/[0]", String(millis()));
+  valueRange.set("values/[0]/[0]", getNtpTimeString());
   valueRange.set("values/[0]/[1]", errorMsg);
   valueRange.set("values/[0]/[2]", errorDetails);
 

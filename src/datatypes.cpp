@@ -38,25 +38,25 @@ void ProductRegistry::addModule(uint8_t addr, const String& uid, const String& c
   // Avoid duplicates
   for (auto& m : modules) {
     if (m.i2cAddress == addr) {
-      m.moduleUID = uid;
-      m.itemCode = code;
-      m.name = name;
-      m.stock = stock;
-      m.lastSeen = millis();
-      m.online = true;
+      m.moduleUID =     uid;
+      m.itemCode =      code;
+      m.name =          name;
+      m.stock =         stock;
+      m.lastSeen =      millis();
+      m.online =        true;
       return;
     }
   }
   
   ProductModule module;
-  module.i2cAddress = addr;
-  module.moduleUID = uid;
-  module.itemCode = code;
-  module.name = name;
-  module.stock = stock;
-  module.healthy = true;
-  module.online = true;
-  module.lastSeen = millis();
+  module.i2cAddress =   addr;
+  module.moduleUID =    uid;
+  module.itemCode =     code;
+  module.name =         name;
+  module.stock =        stock;
+  module.healthy =      true;
+  module.online =       true;
+  module.lastSeen =     millis();
   modules.push_back(module);
 }
 
@@ -107,10 +107,10 @@ ProductModule* ProductRegistry::findModuleByUID(const String& uid) {
 
 void ProductRegistry::logError(ErrorCode code, const String& message, const String& affectedItem) {
   ErrorLog err;
-  err.code = code;
-  err.message = message;
-  err.timestamp = millis();
-  err.affectedItem = affectedItem;
+  err.code =          code;
+  err.message =       message;
+  err.timestamp =     millis();
+  err.affectedItem =  affectedItem;
   errorLogs.push_back(err);
   
   // Keep only last 50 errors

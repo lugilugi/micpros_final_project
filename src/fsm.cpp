@@ -53,15 +53,15 @@ static State transitionTable[9][13] = {
 // ===================== FSM INITIALIZATION =============================
 
 void initFSM() {
-  currentState = STATE_IDLE;
-  inputBuffer = "";
-  selectedCode = "";
-  selectedModule = nullptr;
-  stateEnteredAt = millis();
-  confirmDeadline = 0;
-  syncTimer = millis();
-  lastErrorCode = ERR_NONE;
-  lastErrorMsg = "";
+  currentState       = STATE_IDLE;
+  inputBuffer        = "";
+  selectedCode       = "";
+  selectedModule     = nullptr;
+  stateEnteredAt     = millis();
+  confirmDeadline    = 0;
+  syncTimer          = millis();
+  lastErrorCode      = ERR_NONE;
+  lastErrorMsg       = "";
 }
 
 // ===================== STATE ENTRY HANDLER =============================
@@ -89,7 +89,7 @@ void onStateEntry(State s) {
       lcd.setCursor(0, 0);
       lcd.print("Product Code:");
       lcd.setCursor(0,3);
-      lcd.print("[*]Cancel [#]Submit");
+      lcd.print("[*]Cancel [#]Confirm");
       lcd.setCursor(0, 1);
       lcd.print("");
       break;
@@ -111,7 +111,7 @@ void onStateEntry(State s) {
         lcd.print(selectedModule->name.c_str());
       }
       lcd.setCursor(0, 1);
-      lcd.print("# Confirm  * Cancel");
+      lcd.print("[*]Cancel [#]Confirm");
       break;
       
     case STATE_DISPENSE:
