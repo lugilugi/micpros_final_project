@@ -175,20 +175,43 @@ void syncProductDataFromSheets() {
   std::vector<std::vector<String>> rows;
   parseValuesJson(resp, rows);
 
+  Serial.println("Parsing Products sheet rows...");
   for (size_t i = 0; i < rows.size(); ++i) {
     auto &r = rows[i];
-    if (r.size() < 4) continue;
-    String code = r[0];
-    String name = r[1];
-    int stock = r[2].toInt();
-    uint8_t addr = (uint8_t)r[3];
+    if (r.size() < 1) continue; // skip empty rows
 
+    String code = r.size() > 0 ? r[0] : String("");
+    String name = r.size() > 1 ? r[1] : String("");
+    int stock = r.size() > 2 ? r[2].toInt() : 0;
+    String addrStr = r.size() > 3 ? r[3] : String("");
+
+    code.trim(); name.trim(); addrStr.trim();
+
+    // Always add or update the product in the local registry
     g_registry.addProduct(code, name, stock, true);
-    ProductModule* mod = g_registry.findModuleByAddress(addr);
-    if (mod) {
-      mod->itemCode = code;
-      mod->name = name;
-      mod->stock = stock;
+
+    // If the sheet row contains an I2C address, try to map product -> module
+    if (addrStr.length() > 0) {
+      // Accept decimal or 0x-prefixed hex. Use strtol base=0 to support both.
+      char *endptr = nullptr;
+      long addrVal = strtol(addrStr.c_str(), &endptr, 0);
+      if (endptr == addrStr.c_str()) {
+        Serial.print("Products: invalid address for code "); Serial.print(code); Serial.print(" -> '"); Serial.print(addrStr); Serial.println("'");
+        continue;
+      }
+
+      uint8_t addr = (uint8_t)(addrVal & 0xFF);
+      ProductModule* mod = g_registry.findModuleByAddress(addr);
+      if (mod) {
+        // Module is already discovered locally; assign product info
+        mod->itemCode = code;
+        mod->name = name;
+        mod->stock = stock;
+      } else {
+        // Module not present yet in registry; create a placeholder module entry
+        // UID unknown here (module may not have been scanned), store empty UID.
+        g_registry.addModule(addr, String(""), code, name, stock);
+      }
     }
   }
 
@@ -205,17 +228,37 @@ void syncProductDataFromSheets() {
   } else {
     std::vector<std::vector<String>> modRows;
     parseValuesJson(respMod, modRows);
+    Serial.println("Parsing Modules sheet rows...");
     for (size_t i = 0; i < modRows.size(); ++i) {
-      auto &r = modRows[i];
-      if (r.size() < 1) continue;
-      String uid = r[0];
+      auto &mr = modRows[i];
+      if (mr.size() < 1) continue;
+      String uid = mr.size() > 0 ? mr[0] : String("");
+      String addrStr = mr.size() > 1 ? mr[1] : String("");
+      String code = mr.size() > 2 ? mr[2] : String("");
+      uid.trim(); addrStr.trim(); code.trim();
+
       uint8_t addr = 0;
-      String code = "";
-      if (r.size() >= 2) addr = (uint8_t)r[1].toInt();
-      if (r.size() >= 3) code = r[2];
-      // Add module entry; name/stock will be filled when product exists
-      g_registry.addModule(addr, uid, code, "", 0);
+      if (addrStr.length() > 0) {
+        char *endptr = nullptr;
+        long v = strtol(addrStr.c_str(), &endptr, 0);
+        if (endptr != addrStr.c_str()) {
+          addr = (uint8_t)(v & 0xFF);
+        } else {
+          Serial.print("Modules: invalid address for UID "); Serial.print(uid); Serial.print(" -> '"); Serial.print(addrStr); Serial.println("'");
+        }
+      }
+
+      // If a module at this address already exists, update its UID/code
+      ProductModule* existing = g_registry.findModuleByAddress(addr);
+      if (existing) {
+        if (uid.length() > 0) existing->moduleUID = uid;
+        if (code.length() > 0) existing->itemCode = code;
+      } else {
+        // Add module with the information from the sheet
+        g_registry.addModule(addr, uid, code, String(""), 0);
+      }
     }
+
     Serial.println("Module mapping synced from Google Sheets");
     g_registry.debugPrintModules();
   }
